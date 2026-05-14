@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Word Search – Brianna Solis's Webpage</title>
+  <style>
+    :root {
+      --purple-bg: #b07ec8;
+      --purple-dark: #7b4fa6;
+      --purple-deep: #5a3080;
+      --purple-light: #d4b5ea;
+      --cream: #fdf6f0;
+      --white: #ffffff;
+      --text-dark: #2d1b3d;
+      --border: #9b6dbf;
+      --dashed: #8855bb;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Georgia, 'Times New Roman', serif;
+      background: var(--purple-bg);
+      color: var(--text-dark);
+      min-height: 100vh;
+      padding-bottom: 40px;
+    }
+
+    /* ── NAV ── */
+    .site-nav {
+      background: var(--cream);
+      border-bottom: 3px solid var(--border);
+      padding: 12px 28px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(90,48,128,0.18);
+    }
+    .site-nav a {
+      color: var(--purple-deep);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: bold;
+      padding: 6px 18px;
+      border-radius: 20px;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .site-nav a:hover, .site-nav a.active {
+      background: var(--purple-dark);
+      color: var(--white);
+      border-color: var(--purple-dark);
+    }
+    .site-nav .nav-label {
+      margin-left: auto;
+      font-size: 0.82rem;
+      color: var(--purple-dark);
+      font-style: italic;
+    }
+
+    /* ── LAYOUT ── */
+    .ws-container {
+      max-width: 960px;
+      margin: 28px auto;
+      padding: 0 18px 40px;
+    }
+
+    .ws-header {
+      background: var(--cream);
+      border: 3px solid var(--border);
+      border-radius: 10px;
+      text-align: center;
+      padding: 22px 16px 16px;
+      margin-bottom: 24px;
+    }
+    .ws-header h1 {
+      font-size: 2.1rem;
+      font-weight: 900;
+      color: var(--text-dark);
+    }
+    .ws-header p {
+      color: var(--purple-deep);
+      font-style: italic;
+      margin-top: 6px;
+      font-size: 0.97rem;
+    }
+
+    .ws-layout {
+      display: flex;
+      gap: 22px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    /* ── GRID ── */
+    .ws-grid-wrap {
+      background: var(--cream);
+      border: 3px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      flex: 0 0 auto;
+    }
+
+    #ws-grid {
+      display: grid;
+      grid-template-columns: repeat(15, 34px);
+      grid-template-rows: repeat(15, 34px);
+      gap: 2px;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .ws-cell {
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 0.95rem;
+      font-family: 'Courier New', monospace;
+      border-radius: 4px;
+      cursor: pointer;
+      background: var(--white);
+      color: var(--text-dark);
+      border: 1px solid #ddd;
+      transition: background 0.1s, color 0.1s;
+    }
+    .ws-cell.selecting {
+      background: var(--purple-light);
+      color: var(--purple-deep);
+    }
+    .ws-cell.found {
+      background: var(--purple-dark);
+      color: var(--white);
+      border-color: var(--purple-dark);
+    }
+    @keyframes pop {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.25); }
+      100% { transform: scale(1); }
+    }
+    .ws-cell.pop-anim { animation: pop 0.3s ease; }
+
+    /* ── SIDEBAR ── */
+    .ws-sidebar {
+      flex: 1;
+      min-width: 210px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .ws-words-box {
+      background: var(--cream);
+      border: 3px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+    .ws-words-box h3 {
+      font-size: 1.05rem;
+      font-weight: bold;
+      color: var(--purple-deep);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--purple-light);
+    }
+    .word-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .word-list li {
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      font-size: 0.93rem;
+      padding: 5px 10px;
+      border-radius: 5px;
+      background: #ede0f5;
+      color: var(--text-dark);
+      letter-spacing: 1px;
+      transition: all 0.35s;
+    }
+    .word-list li.found-word {
+      background: var(--purple-dark);
+      color: var(--white);
+      text-decoration: line-through;
+      opacity: 0.75;
+    }
+
+    /* ── STATUS ── */
+    .ws-status {
+      background: var(--cream);
+      border: 3px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      text-align: center;
+    }
+    .ws-status .score {
+      font-size: 1.05rem;
+      color: var(--purple-deep);
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+    .ws-status .big-num {
+      font-size: 1.6rem;
+      color: var(--purple-dark);
+    }
+
+    .ws-btn {
+      background: var(--purple-dark);
+      color: var(--white);
+      border: none;
+      padding: 10px 24px;
+      border-radius: 20px;
+      font-size: 0.95rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 14px;
+      font-family: Georgia, serif;
+      transition: background 0.2s;
+    }
+    .ws-btn:hover { background: var(--purple-deep); }
+
+    .win-message {
+      display: none;
+      margin-top: 14px;
+      padding: 12px;
+      background: var(--purple-light);
+      border-radius: 8px;
+      color: var(--text-dark);
+      font-weight: bold;
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
+    /* ── INSTRUCTIONS ── */
+    .instructions {
+      background: var(--cream);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 0.88rem;
+      color: var(--purple-deep);
+      line-height: 1.65;
+    }
+    .instructions strong { color: var(--text-dark); }
+  </style>
+</head>
+<body>
+
+  <!-- NAVIGATION -->
+  <nav class="site-nav">
+    <a href="index.html">🏠 Home</a>
+    <a href="wordsearch.html" class="active">🔤 Word Search</a>
+    <span class="nav-label">Brianna Solis's Webpage</span>
+  </nav>
+
+  <div class="ws-container">
+
+    <div class="ws-header">
+      <h1>🔤 Brianna's Word Search</h1>
+      <p>Find all 12 words hidden in the grid — they go in every direction!</p>
+    </div>
+
+    <div class="ws-layout">
+
+      <!-- GRID -->
+      <div class="ws-grid-wrap">
+        <div id="ws-grid"></div>
+      </div>
+
+      <!-- SIDEBAR -->
+      <div class="ws-sidebar">
+
+        <div class="ws-words-box">
+          <h3>Find these words:</h3>
+          <ul class="word-list" id="word-list"></ul>
+        </div>
+
+        <div class="ws-status">
+          <p class="score">Found: <span class="big-num"><span id="found-count">0</span> / <span id="total-count">0</span></span></p>
+          <button class="ws-btn" onclick="resetGame()">🔄 New Game</button>
+          <div class="win-message" id="win-msg">
+            🎉 You found them all!<br>Hook 'em! 🤘
+          </div>
+        </div>
+
+        <div class="instructions">
+          <strong>How to play:</strong><br>
+          Click a letter and drag to the end of a word — forward, backward, or diagonal. Release to check!
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+<script>
+const WORDS = [
+  'MARKETING', 'AUSTIN', 'LONGHORN', 'BAKING', 'CHESS',
+  'FASHION', 'BRANDING', 'DANCING', 'BRIANNA', 'THRIFTING',
+  'CREATIVE', 'MEDIA'
+];
+
+const SIZE = 15;
+const DIRS = [
+  [0,1],[0,-1],[1,0],[-1,0],
+  [1,1],[1,-1],[-1,1],[-1,-1]
+];
+
+let grid = [], placed = {}, foundWords = new Set();
+let selecting = [], mouseDown = false;
+
+/* ── BUILD GRID ── */
+function buildGrid() {
+  grid = Array.from({length: SIZE}, () => Array(SIZE).fill(''));
+  placed = {};
+  const shuffled = [...WORDS].sort(() => Math.random() - 0.5);
+  for (const w of shuffled) placeWord(w);
+  const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  for (let r = 0; r < SIZE; r++)
+    for (let c = 0; c < SIZE; c++)
+      if (!grid[r][c]) grid[r][c] = alpha[Math.floor(Math.random() * 26)];
+}
+
+function placeWord(word) {
+  for (let attempt = 0; attempt < 300; attempt++) {
+    const dir = DIRS[Math.floor(Math.random() * DIRS.length)];
+    const r = Math.floor(Math.random() * SIZE);
+    const c = Math.floor(Math.random() * SIZE);
+    const cells = [];
+    let ok = true;
+    for (let i = 0; i < word.length; i++) {
+      const nr = r + dir[0]*i, nc = c + dir[1]*i;
+      if (nr < 0 || nr >= SIZE || nc < 0 || nc >= SIZE) { ok = false; break; }
+      if (grid[nr][nc] && grid[nr][nc] !== word[i]) { ok = false; break; }
+      cells.push({r: nr, c: nc});
+    }
+    if (ok) {
+      for (let i = 0; i < word.length; i++) grid[cells[i].r][cells[i].c] = word[i];
+      placed[word] = cells;
+      return;
+    }
+  }
+}
+
+/* ── RENDER ── */
+function renderGrid() {
+  const container = document.getElementById('ws-grid');
+  container.innerHTML = '';
+  for (let r = 0; r < SIZE; r++) {
+    for (let c = 0; c < SIZE; c++) {
+      const el = document.createElement('div');
+      el.className = 'ws-cell';
+      el.textContent = grid[r][c];
+      el.dataset.r = r; el.dataset.c = c;
+      el.addEventListener('mousedown',  e => { e.preventDefault(); mouseDown = true; startSelect(r,c); });
+      el.addEventListener('mouseover',  () => { if (mouseDown) extendSelect(r,c); });
+      el.addEventListener('mouseup',    () => { mouseDown = false; endSelect(); });
+      el.addEventListener('touchstart', e => { e.preventDefault(); mouseDown = true; startSelect(r,c); }, {passive:false});
+      el.addEventListener('touchmove',  e => {
+        e.preventDefault();
+        const t = e.touches[0];
+        const target = document.elementFromPoint(t.clientX, t.clientY);
+        if (target && target.dataset.r !== undefined) extendSelect(+target.dataset.r, +target.dataset.c);
+      }, {passive:false});
+      el.addEventListener('touchend', () => { mouseDown = false; endSelect(); });
+      container.appendChild(el);
+    }
+  }
+  refreshFound();
+}
+
+function cell(r,c) { return document.querySelector(`.ws-cell[data-r="${r}"][data-c="${c}"]`); }
+
+/* ── SELECTION ── */
+function startSelect(r,c) { selecting = [{r,c}]; paintSelecting(); }
+
+function extendSelect(r,c) {
+  if (!selecting.length) return;
+  const s = selecting[0];
+  const dr = r - s.r, dc = c - s.c;
+  const len = Math.max(Math.abs(dr), Math.abs(dc));
+  if (len === 0) { selecting = [s]; paintSelecting(); return; }
+  if (dr !== 0 && dc !== 0 && Math.abs(dr) !== Math.abs(dc)) return; // not a valid diagonal
+  const sr = dr === 0 ? 0 : dr / Math.abs(dr);
+  const sc = dc === 0 ? 0 : dc / Math.abs(dc);
+  const cells = [];
+  for (let i = 0; i <= len; i++) cells.push({r: s.r + sr*i, c: s.c + sc*i});
+  selecting = cells;
+  paintSelecting();
+}
+
+function paintSelecting() {
+  document.querySelectorAll('.ws-cell:not(.found)').forEach(el => el.classList.remove('selecting'));
+  selecting.forEach(({r,c}) => {
+    const el = cell(r,c);
+    if (el && !el.classList.contains('found')) el.classList.add('selecting');
+  });
+}
+
+function endSelect() {
+  const str = selecting.map(({r,c}) => grid[r][c]).join('');
+  const rev = [...str].reverse().join('');
+  let matched = null;
+  for (const w of WORDS) {
+    if (!foundWords.has(w) && (str === w || rev === w)) { matched = w; break; }
+  }
+  if (matched) {
+    foundWords.add(matched);
+    selecting.forEach(({r,c}) => {
+      const el = cell(r,c);
+      el.classList.remove('selecting');
+      el.classList.add('found', 'pop-anim');
+      setTimeout(() => el.classList.remove('pop-anim'), 400);
+    });
+    refreshFound();
+    if (foundWords.size === WORDS.length) {
+      setTimeout(() => { document.getElementById('win-msg').style.display = 'block'; }, 350);
+    }
+  } else {
+    document.querySelectorAll('.ws-cell.selecting').forEach(el => el.classList.remove('selecting'));
+  }
+  selecting = [];
+}
+
+function refreshFound() {
+  document.getElementById('found-count').textContent = foundWords.size;
+  document.getElementById('total-count').textContent = WORDS.length;
+  const list = document.getElementById('word-list');
+  list.innerHTML = '';
+  WORDS.forEach(w => {
+    const li = document.createElement('li');
+    li.textContent = w;
+    if (foundWords.has(w)) li.classList.add('found-word');
+    list.appendChild(li);
+  });
+}
+
+function resetGame() {
+  foundWords = new Set(); selecting = [];
+  document.getElementById('win-msg').style.display = 'none';
+  buildGrid(); renderGrid();
+}
+
+document.addEventListener('mouseup', () => { if (mouseDown) { mouseDown = false; endSelect(); } });
+
+buildGrid();
+renderGrid();
+</script>
+</body>
+</html>
